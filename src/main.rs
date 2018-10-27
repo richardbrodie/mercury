@@ -27,28 +27,29 @@ extern crate tokio_io;
 extern crate url;
 
 use dotenv::dotenv;
+use hermod::futures::start_fetch_loop;
+use hermod::models::Feed;
 use std::collections::HashMap;
 use std::env;
 use std::sync::{Arc, Mutex};
 
 // pub mod db;
-pub mod feed;
-pub mod models;
+// pub mod feed;
+// pub mod models;
 // pub mod schema;
 // pub mod views;
 
-// use self::db::create_admin_user;
-use self::feed::start_interval_loops;
-
 fn main() {
-  dotenv().ok();
-  env::set_var("RUST_LOG", "mercury=info");
-  pretty_env_logger::init();
+    dotenv().ok();
+    env::set_var("RUST_LOG", "mercury=info");
+    pretty_env_logger::init();
 
-  // create_admin_user();
-
-  // rt::run(rt::lazy(|| {
-  //   start_interval_loops();
-  //   Ok(())
-  // }));
+    let feeds = vec![
+        "https://lorem-rss.herokuapp.com/feed".to_owned(),
+        "https://feeds.feedburner.com/cyclingtipsblog/TJog".to_owned(),
+    ];
+    let feed_state = Arc::new(Mutex::new(feeds));
+    let func = |s: Feed| println!("fetched: {}", s.channel.title);
+    let work = start_fetch_loop(feed_state, 60, func);
+    tokio::run(work);
 }
